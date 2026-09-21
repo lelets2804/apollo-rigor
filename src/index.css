@@ -1,0 +1,125 @@
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: var(--gold-dim); color: var(--gold-strong); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 0; border: 3px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
+
+/* ── Apollo Rigor — Light (padrão, referência da identidade da marca) ──
+   Papel de musselina + tinta de lã prensada + latão envelhecido reservado. */
+:root,
+[data-theme='light'] {
+  --bg:          #ECE7DA;
+  --bg-elevated: #F5F1E7;
+  --card:        #FCFBF6;
+  --sidebar:     #171A1E;
+  --sidebar-text:#E7E3D7;
+  --input-bg:    #F5F1E7;
+  --border:      #DBD3BF;
+  --border-soft: #E6DECC;
+
+  --gold:        #8F7231;
+  --gold-dim:    #E9DFC3;
+  --gold-text:   #77601F;
+  --gold-strong: #574616;
+
+  --text:        #201D16;
+  --text-sub:    #6B6453;
+  --text-muted:  #A79D84;
+
+  --accent-ink:  #1B1710;
+  --paper:       #F4EFE3;
+
+  --shadow: 0 12px 34px rgba(28, 24, 16, 0.10);
+
+  --status-green-bg:  #E4F1E6; --status-green-fg:  #1E7A45; --status-green-border:  #1E7A4530;
+  --status-orange-bg: #F8ECD7; --status-orange-fg: #A8631A; --status-orange-border: #A8631A30;
+  --status-yellow-bg: #F7EFC9; --status-yellow-fg: #8E7008; --status-yellow-border: #8E700830;
+  --status-red-bg:    #F7E4E0; --status-red-fg:    #B93A2F; --status-red-border:    #B93A2F30;
+  --status-grey-bg:   #EBE6DA; --status-grey-fg:   #6B6453; --status-grey-border:   #6B645330;
+  --status-blue-bg:   #E1EAF4; --status-blue-fg:   #29588F; --status-blue-border:   #29588F30;
+}
+
+/* ── Apollo Rigor — Dark ── */
+[data-theme='dark'] {
+  --bg:          #13151A;
+  --bg-elevated: #191C22;
+  --card:        #1C1F26;
+  --sidebar:     #0F1114;
+  --sidebar-text:#E7E3D7;
+  --input-bg:    #0F1114;
+  --border:      #2E323C;
+  --border-soft: #23262E;
+
+  --gold:        #C6A05B;
+  --gold-dim:    #40391F;
+  --gold-text:   #E1C588;
+  --gold-strong: #E1C588;
+
+  --text:        #E8E4D7;
+  --text-sub:    #ABA491;
+  --text-muted:  #7E7767;
+
+  --accent-ink:  #16130D;
+  --paper:       #F4EFE3;
+
+  --shadow: 0 14px 38px rgba(0, 0, 0, 0.5);
+
+  --status-green-bg:  #0E2117; --status-green-fg:  #57D98A; --status-green-border:  #57D98A2A;
+  --status-orange-bg: #24160A; --status-orange-fg: #F0A857; --status-orange-border: #F0A8572A;
+  --status-yellow-bg: #221E0A; --status-yellow-fg: #EAD25E; --status-yellow-border: #EAD25E2A;
+  --status-red-bg:    #2A0F0D; --status-red-fg:    #EF6B5F; --status-red-border:    #EF6B5F2A;
+  --status-grey-bg:   #1E212A; --status-grey-fg:   #9A98A8; --status-grey-border:   #9A98A82A;
+  --status-blue-bg:   #0E1A26; --status-blue-fg:   #6FADEE; --status-blue-border:   #6FADEE2A;
+}
+
+:root {
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-sans: 'IBM Plex Sans', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  --radius:    8px;
+  --radius-sm: 5px;
+}
+
+/* números e dados operacionais em algarismos tabulares */
+[data-mono] { font-family: var(--font-mono); font-feature-settings: 'tnum' 1, 'zero' 1; }
+
+@keyframes apollo-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes apollo-scale-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.apollo-anim-in { animation: apollo-fade-in 0.28s ease both; }
+.apollo-scale-in { animation: apollo-scale-in 0.18s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .apollo-anim-in, .apollo-scale-in { animation: none; }
+  * { transition: none !important; }
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ── Vitrine do cliente — colapsos responsivos ─────────────────────────── */
+@media (max-width: 900px) {
+  .hero-grid { grid-template-columns: 1fr !important; }
+  .pedido-grid { grid-template-columns: 1fr !important; }
+  [data-produto-modal] { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 620px) {
+  .site-nav-links { display: none !important; }
+}
