@@ -20,10 +20,7 @@ const STATUS_COR = {
 // cartão-linha clicável da lista de pedidos
 function RowShell({ onClick, children }) {
   return (
-    <button onClick={onClick} style={{
-      display: 'block', textAlign: 'left', width: '100%', cursor: 'pointer',
-      border: `1px solid ${line}`, background: card, padding: '16px 18px', fontFamily: 'var(--font-sans)',
-    }}>
+    <button onClick={onClick} style={{ display: 'block', textAlign: 'left', width: '100%', cursor: 'pointer', border: `1px solid ${line}`, background: card, padding: '16px 18px', fontFamily: 'var(--font-sans)',}}>
       {children}
     </button>
   );
