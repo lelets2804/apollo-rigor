@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { pool } from './db.js';
 import auth from './routes/auth.js';
+import produtos from './routes/produtos.js';
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.get('/api/health', async (_req, res) => {
 });
 
 app.use('/api/auth', auth);
+app.use('/api/produtos', produtos);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

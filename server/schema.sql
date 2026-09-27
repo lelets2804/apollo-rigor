@@ -151,3 +151,27 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 );
 
 CREATE INDEX IF NOT EXISTS idx_refresh_usuario ON refresh_tokens(usuario_id);
+
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS tel TEXT DEFAULT '';
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS documento TEXT DEFAULT '';
+
+CREATE TABLE IF NOT EXISTS produtos (
+  id SERIAL PRIMARY KEY,
+  nome TEXT NOT NULL,
+  categoria TEXT NOT NULL,
+  colecao TEXT NOT NULL,
+  tecido TEXT NOT NULL,
+  cor TEXT NOT NULL,
+  linha TEXT NOT NULL,
+  aluguel NUMERIC NOT NULL DEFAULT 0,
+  venda NUMERIC NOT NULL DEFAULT 0,
+  foto TEXT DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS variantes (
+  id SERIAL PRIMARY KEY,
+  produto_id INTEGER NOT NULL REFERENCES produtos(id) ON DELETE CASCADE,
+  tam TEXT NOT NULL,
+  qtd INTEGER NOT NULL DEFAULT 0,
+  UNIQUE (produto_id, tam)
+);

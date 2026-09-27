@@ -84,6 +84,7 @@ export const api = {
     registrar:(nome, email, senha) => req('/api/auth/registrar', { method: 'POST', body: { nome, email, senha } }),
     logout:   () => req('/api/auth/logout', { method: 'POST', body: { refresh: getRefresh() } }).catch(() => {}),
     eu:       () => req('/api/auth/eu'),
+    atualizar: (dados) => req('/api/auth/eu', { method: 'PUT', body: dados }),
   },
   produtos: {
     list:   () => req('/api/produtos'),

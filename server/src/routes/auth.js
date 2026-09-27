@@ -58,5 +58,26 @@ r.post('/logout', async (req, res, next) => {
 });
 
 r.get('/eu', requireAuth, (req, res) => res.json({ usuario: req.user }));
-
+r.put('/eu', requireAuth, async (req, res, next) => {
+  try {
+    const d = z.object({
+      nome: z.string().min(3).optional(),
+      tel: z.string().optional(),
+      documento: z.string().optional(),
+    }).parse(req.body);
+    const campos = [];
+    const valores = [];
+    let i = 1;
+    if (d.nome !== undefined) { campos.push(`nome=$${i++}`); valores.push(d.nome); }
+    if (d.tel !== undefined) { campos.push(`tel=$${i++}`); valores.push(d.tel); }
+    if (d.documento !== undefined) { campos.push(`documento=$${i++}`); valores.push(d.documento); }
+    if (!campos.length) return res.status(400).json({ erro: 'Nada para atualizar' });
+    valores.push(req.user.id);
+    const { rows } = await pool.query(
+      `UPDATE usuarios SET ${campos.join(', ')} WHERE id=$${i} RETURNING id, nome, email, papel, tel, documento`,
+      valores,
+    );
+    res.json({ usuario: rows[0] });
+  } catch (e) { next(e); }
+});
 export default r;

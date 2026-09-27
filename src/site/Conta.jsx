@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Section, Wrap, Eyebrow, H2, Lead, Button, Field, TextInput, Tape, ink, sub, muted, line, card, brass } from './ui';
 import { useAuth } from '../api/useSessao';
-import { limparSessao, api } from '../api';
+import { limparSessao, api, salvarSessao } from '../api';
 import { emailOk, telOk } from './siteData';
 import { IconCheck } from './icons';
 
@@ -42,19 +42,33 @@ function EditarPerfil({ usuario }) {
   const [form, setForm] = useState(base);
   const [erros, setErros] = useState({});
   const [salvo, setSalvo] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+
   const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setSalvo(false); };
   const sujo = ['nome', 'email', 'tel', 'documento'].some((k) => form[k] !== base[k]);
 
-  const salvar = (e) => {
-    e.preventDefault();
-    const er = {};
-    if (form.nome.trim().length < 3) er.nome = 'Informe seu nome completo.';
-    if (!emailOk(form.email)) er.email = 'E-mail inválido.';
-    if (form.tel.trim() && !telOk(form.tel)) er.tel = 'Telefone com DDD.';
-    setErros(er);
-    if (Object.keys(er).length) return;
+  const salvar = async (e) => {
+  e.preventDefault();
+  const er = {};
+  if (form.nome.trim().length < 3) er.nome = 'Informe seu nome completo.';
+  if (form.tel.trim() && !telOk(form.tel)) er.tel = 'Telefone com DDD.';
+  setErros(er);
+  if (Object.keys(er).length) return;
+  setSalvando(true);
+  try {
+    const { usuario } = await api.auth.atualizar({
+      nome: form.nome.trim(),
+      tel: form.tel.trim(),
+      documento: form.documento.trim(),
+    });
+    salvarSessao({ access: localStorage.getItem('apollo-access'), refresh: localStorage.getItem('apollo-refresh'), usuario });
     setSalvo(true);
-  };
+  } catch (err) {
+    setErros({ geral: err.message || 'Erro ao salvar' });
+  } finally {
+    setSalvando(false);
+  }
+};
 
   return (
     <form onSubmit={salvar} style={{ border: `1px solid ${line}`, background: card, maxWidth: 540 }}>
@@ -77,7 +91,7 @@ function EditarPerfil({ usuario }) {
           </Field>
         </div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginTop: 6 }}>
-          <Button type="submit" disabled={!sujo}>Salvar alterações</Button>
+          <Button type="submit" disabled={!sujo || salvando}>{salvando ? 'Salvando…' : 'Salvar alterações'}</Button>
           {sujo && (<Button type="button" variant="ghost" onClick={() => { setForm(base); setErros({}); setSalvo(false); }}>Descartar</Button>)}
           {salvo && !sujo && (<span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--status-green-fg)', fontFamily: mono, display: 'inline-flex', alignItems: 'center', gap: 6 }}><IconCheck size={13} /> Dados atualizados</span>)}
         </div>
