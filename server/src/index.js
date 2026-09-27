@@ -4,6 +4,7 @@ import cors from 'cors';
 import { pool } from './db.js';
 import auth from './routes/auth.js';
 import produtos from './routes/produtos.js';
+import transacoes from './routes/transacoes.js';
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.get('/api/health', async (_req, res) => {
 
 app.use('/api/auth', auth);
 app.use('/api/produtos', produtos);
+app.use('/api/transacoes', transacoes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);
