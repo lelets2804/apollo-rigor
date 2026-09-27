@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Section, Wrap, Eyebrow, H2, Lead, Button, Field, TextInput, TextArea, Select, Tape, ink, sub, muted, line, brass, card } from './ui';
-import { emailOk, telOk, money } from './siteData';
-import { CATALOGO } from './siteData';
+import { emailOk, telOk, money, useCatalogo } from './siteData';
 import { criarPedido } from '../store/pedidos';
 import Confirmacao from './Confirmacao';
 
@@ -9,10 +8,9 @@ const mono = "var(--font-mono)";
 const hoje = () => new Date().toISOString().slice(0, 10);
 const maisDias = (d, n) => { const x = new Date(d + 'T12:00:00'); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
 
-// modelos que fazem sentido como base de um pacote (ternos)
-const MODELOS_BASE = CATALOGO.filter((p) => p.categoria === 'Terno');
-
 export default function Pacote({ go, cliente }) {
+  const CATALOGO = useCatalogo();
+  const MODELOS_BASE = useMemo(() => CATALOGO.filter((p) => p.categoria === 'Terno'), [CATALOGO]);
   const [form, setForm] = useState({
     noivos: '', dataEvento: maisDias(hoje(), 60), nIntegrantes: 4, modeloBase: '',
     contato: cliente?.nome || '', email: cliente?.email || '', tel: cliente?.tel || '', observacoes: '',
@@ -23,7 +21,7 @@ export default function Pacote({ go, cliente }) {
   useEffect(() => { window.scrollTo({ top: 0 }); }, [feito]);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const modelo = useMemo(() => MODELOS_BASE.find((m) => String(m.id) === String(form.modeloBase)), [form.modeloBase]);
+  const modelo = useMemo(() => MODELOS_BASE.find((m) => String(m.id) === String(form.modeloBase)), [MODELOS_BASE, form.modeloBase]);
   const estimativa = modelo ? modelo.aluguel * Math.max(1, Number(form.nIntegrantes) || 0) : 0;
 
   if (feito) {
@@ -64,11 +62,7 @@ export default function Pacote({ go, cliente }) {
       <Wrap>
         <Eyebrow>Pacote de casamento</Eyebrow>
         <H2 style={{ marginTop: 14, marginBottom: 8 }}>Abra a solicitação do grupo.</H2>
-        <Lead style={{ marginBottom: 36 }}>
-          Com esses dados o ateliê monta o pacote, define o prazo de comparecimento e
-          libera cada integrante para retirar o traje no próprio nome.
-        </Lead>
-
+        <Lead style={{ marginBottom: 36 }}>Com esses dados o ateliê monta o pacote, define o prazo de comparecimento e libera cada integrante para retirar o traje no próprio nome.</Lead>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 320px)', gap: 'clamp(1.5rem, 4vw, 3rem)', alignItems: 'start' }} className="pedido-grid">
           <div>
             <p style={{ margin: '0 0 16px', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: brass, fontFamily: mono, fontWeight: 600 }}>O evento</p>
@@ -84,14 +78,8 @@ export default function Pacote({ go, cliente }) {
               </Field>
             </div>
             <Field label="Modelo base" hint="Opcional — dá para decidir na prova.">
-              <Select
-                value={form.modeloBase}
-                onChange={set('modeloBase')}
-                placeholder="Escolher depois"
-                options={MODELOS_BASE.map((m) => ({ value: m.id, label: `${m.nome} · ${m.cor} · ${money(m.aluguel)}` }))}
-              />
+              <Select value={form.modeloBase} onChange={set('modeloBase')} placeholder="Escolher depois" options={MODELOS_BASE.map((m) => ({ value: m.id, label: `${m.nome} · ${m.cor} · ${money(m.aluguel)}` }))} />
             </Field>
-
             <p style={{ margin: '26px 0 16px', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: brass, fontFamily: mono, fontWeight: 600 }}>Responsável pelo pacote</p>
             <Field label="Nome" error={erros.contato}>
               <TextInput value={form.contato} onChange={set('contato')} placeholder="Quem organiza os trajes" />
@@ -107,13 +95,11 @@ export default function Pacote({ go, cliente }) {
             <Field label="Observações" hint="Cores, cerimonial, integrantes de outra cidade, prazos.">
               <TextArea value={form.observacoes} onChange={set('observacoes')} placeholder="Ex.: 2 padrinhos moram fora e só chegam na semana do casamento." />
             </Field>
-
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 8 }}>
               <Button onClick={enviar}>Enviar solicitação</Button>
               <Button variant="ghost" onClick={() => go('colecao')}>Ver modelos primeiro</Button>
             </div>
           </div>
-
           <aside style={{ border: `1px solid ${line}`, background: card }}>
             <Tape height={8} style={{ opacity: 0.5 }} />
             <div style={{ padding: 18 }}>
@@ -125,9 +111,7 @@ export default function Pacote({ go, cliente }) {
               <Row k="Integrantes" v={String(form.nIntegrantes || 0)} />
               <Row k="Total estimado" v={estimativa ? money(estimativa) : '—'} strong />
             </dl>
-            <p style={{ margin: 0, padding: '12px 18px 18px', fontSize: 11, color: muted, borderTop: `1px solid ${line}` }}>
-              Estimativa sem ajustes individuais. O ateliê fecha o valor por integrante.
-            </p>
+            <p style={{ margin: 0, padding: '12px 18px 18px', fontSize: 11, color: muted, borderTop: `1px solid ${line}` }}>Estimativa sem ajustes individuais. O ateliê fecha o valor por integrante.</p>
           </aside>
         </div>
       </Wrap>

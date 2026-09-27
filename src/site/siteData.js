@@ -1,19 +1,11 @@
-// Dados e textos da vitrine. O catálogo reaproveita PRODUTOS_INIT do sistema —
-// mesma fonte de verdade que o estoque interno.
-import { PRODUTOS_INIT, fmt } from '../constants';
-
-export const CATALOGO = PRODUTOS_INIT;
+import { useState, useEffect } from 'react';
+import { fmt } from '../constants';
+import { api } from '../api';
 
 export const money = (v) => `R$ ${fmt(v)}`;
-
-// tamanhos cadastrados para um modelo, na ordem da grade
 export const tamanhosDe = (p) => (p.variantes || []).map((v) => v.tam);
+export const aluguelMinimo = (catalogo) => catalogo.length ? Math.min(...catalogo.map((p) => p.aluguel)) : 0;
 
-// menor preço de aluguel do catálogo, para a chamada "a partir de"
-export const aluguelMinimo = () => Math.min(...CATALOGO.map((p) => p.aluguel));
-
-// A vitrine agrupa por finalidade, não por categoria de estoque — é assim que
-// o cliente pensa ("vou a um casamento", "sou padrinho").
 export const VITRINES = [
   { id: 'noivo', titulo: 'Para o noivo', desc: 'Ternos e smokings de cerimônia, com ajuste de ateliê incluso.', filtro: (p) => p.categoria === 'Terno' && (p.colecao === 'Noivos Premium' || p.colecao === 'Black Tie') },
   { id: 'padrinhos', titulo: 'Padrinhos e pais', desc: 'Modelos padronizados para vestir o grupo inteiro na mesma linha.', filtro: (p) => p.linha === 'Padronizada' && p.categoria === 'Terno' },
@@ -36,6 +28,20 @@ export const ATELIE = {
   tel: '(11) 3255-0140',
 };
 
-// validação leve de formulário, reutilizada nos dois fluxos de pedido
 export const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
 export const telOk = (v) => String(v || '').replace(/\D/g, '').length >= 10;
+
+let _cache = null;
+let _promessa = null;
+
+export function useCatalogo() {
+  const [catalogo, setCatalogo] = useState(_cache || []);
+  useEffect(() => {
+    if (_cache) { setCatalogo(_cache); return; }
+    if (!_promessa) _promessa = api.produtos.list().catch(() => []);
+    let vivo = true;
+    _promessa.then((lista) => { _cache = lista; if (vivo) setCatalogo(lista); });
+    return () => { vivo = false; };
+  }, []);
+  return catalogo;
+}

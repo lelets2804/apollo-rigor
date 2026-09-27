@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Section, Wrap, Eyebrow, H2, Lead, ProdutoCard, Tape, ink, sub, line, brass } from './ui';
-import { CATALOGO, VITRINES } from './siteData';
+import { VITRINES, useCatalogo } from './siteData';
 import { CATEGORIAS } from '../constants';
 
 const mono = "var(--font-mono)";
 
 export default function Colecao({ openProduto, foco }) {
+  const CATALOGO = useCatalogo();
   const [vitrine, setVitrine] = useState(foco || 'todos');
   const [categoria, setCategoria] = useState('');
 
@@ -18,7 +19,7 @@ export default function Colecao({ openProduto, foco }) {
     if (v) arr = arr.filter(v.filtro);
     if (categoria) arr = arr.filter((p) => p.categoria === categoria);
     return arr;
-  }, [vitrine, categoria]);
+  }, [CATALOGO, vitrine, categoria]);
 
   const abas = [{ id: 'todos', titulo: 'Tudo' }, ...VITRINES];
 
@@ -34,24 +35,14 @@ export default function Colecao({ openProduto, foco }) {
 
         <div style={{ margin: '32px 0 8px', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {abas.map((a) => (
-            <button key={a.id} onClick={() => setVitrine(a.id)} style={{
-              padding: '8px 15px', borderRadius: 2, cursor: 'pointer', fontFamily: 'var(--font-sans)',
-              fontSize: 12.5, fontWeight: vitrine === a.id ? 600 : 500,
-              background: vitrine === a.id ? 'var(--gold-dim)' : 'transparent',
-              color: vitrine === a.id ? 'var(--gold-strong)' : ink,
-              border: `1px solid ${vitrine === a.id ? 'var(--gold)' : line}`,
-            }}>
-              {a.titulo}
-            </button>
+            <button key={a.id} onClick={() => setVitrine(a.id)} style={{ padding: '8px 15px', borderRadius: 2, cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: 12.5, fontWeight: vitrine === a.id ? 600 : 500, background: vitrine === a.id ? 'var(--gold-dim)' : 'transparent', color: vitrine === a.id ? 'var(--gold-strong)' : ink, border: `1px solid ${vitrine === a.id ? 'var(--gold)' : line}` }}>{a.titulo}</button>
           ))}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '14px 0 28px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: 10.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: sub, fontFamily: mono }}>Categoria</span>
           <button onClick={() => setCategoria('')} style={pill(categoria === '')}>Todas</button>
-          {CATEGORIAS.map((c) => (
-            <button key={c} onClick={() => setCategoria(c === categoria ? '' : c)} style={pill(categoria === c)}>{c}</button>
-          ))}
+          {CATEGORIAS.map((c) => (<button key={c} onClick={() => setCategoria(c === categoria ? '' : c)} style={pill(categoria === c)}>{c}</button>))}
         </div>
 
         <Tape height={10} style={{ marginBottom: 32 }} />
@@ -70,10 +61,4 @@ export default function Colecao({ openProduto, foco }) {
   );
 }
 
-const pill = (on) => ({
-  padding: '5px 12px', borderRadius: 2, cursor: 'pointer', fontFamily: 'var(--font-sans)',
-  fontSize: 12, fontWeight: on ? 600 : 500,
-  background: on ? 'var(--gold-dim)' : 'transparent',
-  color: on ? 'var(--gold-strong)' : 'var(--text-sub)',
-  border: `1px solid ${on ? 'var(--gold)' : 'var(--border)'}`,
-});
+const pill = (on) => ({ padding: '5px 12px', borderRadius: 2, cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: on ? 600 : 500, background: on ? 'var(--gold-dim)' : 'transparent', color: on ? 'var(--gold-strong)' : 'var(--text-sub)', border: `1px solid ${on ? 'var(--gold)' : 'var(--border)'}` });
