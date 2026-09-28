@@ -5,6 +5,7 @@ import {
   alertaPacote, integranteCompareceu, comparecimentoPacote, statusPacote,
 } from '../logic';
 import { Card, SectionTitle, Heading, TH, TD, Inp, Sel, BtnGold, BtnOut, Badge, Chip, Alert, Modal, Stat, TickRule } from './UI';
+import { api } from '../api';
 
 let _transId = 15;
 let _ajusteId = 2;
@@ -374,18 +375,43 @@ function PacoteDetalhe({ t, produtos, trans, setTrans, ajustes, setAjustes, onVo
   const [senhaTemp, setSenhaTemp] = useState(t.senhaRevelacao || '');
   const produtoAddSel = produtos.find((p) => p.id === Number(addForm.produtoId));
   const tamOptionsAdd = (produtoAddSel?.variantes || []).map((v) => v.tam);
-  const confirmarAdicao = () => {
+
+  const salvarViaAPI = async (patch, msgErro) => {
+    try {
+      const atualizada = await api.transacoes.update(t.id, { ...t, ...patch });
+      setTrans((prev) => prev.map((x) => x.id === t.id ? atualizada : x));
+      return atualizada;
+    } catch (err) {
+      alert(err.message || msgErro);
+    }
+  };
+
+  const confirmarAdicao = async () => {
     if (!addForm.nome || !addForm.produtoId || !addForm.tam) { setAddErro('Preencha nome, traje e tamanho.'); return; }
     const produto = produtos.find((p) => p.id === Number(addForm.produtoId));
     const r = buscarTamanhoComFlexibilidade(produto, addForm.tam, t.retirada, t.devolucao, trans, ajustes);
     if (!r.disponivel) { setAddErro(`"${produto.nome}" tamanho ${addForm.tam} está esgotado, mesmo considerando tamanhos maiores.`); return; }
-    setTrans((prev) => prev.map((x) => x.id !== t.id ? x : { ...x, integrantes: [...(x.integrantes || []), { nome: addForm.nome, documento: addForm.documento, papel: addForm.papel, produtoId: produto.id, tam: addForm.tam, tamEntregue: r.tam, numeroContrato: '', precoNegociado: produto.aluguel, excecaoPreco: '', pagamento: 'Pendente', devolvido: false, avarias: '' }] }));
+    const novoIntegrante = { nome: addForm.nome, documento: addForm.documento, papel: addForm.papel, produtoId: produto.id, tam: addForm.tam, tamEntregue: r.tam, numeroContrato: '', precoNegociado: produto.aluguel, excecaoPreco: '', pagamento: 'Pendente', devolvido: false, avarias: '' };
+    const atualizada = await salvarViaAPI({ integrantes: [...(t.integrantes || []), novoIntegrante] }, 'Erro ao adicionar participante');
+    if (!atualizada) return;
     if (r.precisaAjuste) { setAjustes((prev) => [...prev, { id: _ajusteId++, produtoId: produto.id, transId: t.id, desc: `Ajuste de caimento: peça retirada no tamanho ${r.tam} para atender pedido do tamanho ${addForm.tam}.`, tamOriginal: addForm.tam, tamEntregue: r.tam, entrega: t.retirada || '', status: 'Pendente' }]); }
     setAddForm(EMPTY_ADD); setAddAberto(false); setAddErro('');
   };
-  const salvarEdicao = (idx, dados) => { setTrans((prev) => prev.map((x) => x.id !== t.id ? x : { ...x, integrantes: x.integrantes.map((i, iIdx) => iIdx === idx ? { ...i, ...dados } : i) })); setEditandoIdx(null); };
-  const toggleTrajeConfidencial = () => { setTrans((prev) => prev.map((x) => x.id === t.id ? { ...x, trajeConfidencial: !x.trajeConfidencial } : x)); };
-  const salvarSenha = () => { setTrans((prev) => prev.map((x) => x.id === t.id ? { ...x, senhaRevelacao: senhaTemp } : x)); };
+
+  const salvarEdicao = async (idx, dados) => {
+    const novos = integrantes.map((i, iIdx) => iIdx === idx ? { ...i, ...dados } : i);
+    const atualizada = await salvarViaAPI({ integrantes: novos }, 'Erro ao salvar edição');
+    if (atualizada) setEditandoIdx(null);
+  };
+
+  const toggleTrajeConfidencial = async () => {
+    await salvarViaAPI({ trajeConfidencial: !t.trajeConfidencial }, 'Erro ao alternar traje confidencial');
+  };
+
+  const salvarSenha = async () => {
+    await salvarViaAPI({ senhaRevelacao: senhaTemp }, 'Erro ao salvar senha');
+  };
+
   return (
     <div>
       <BtnOut onClick={onVoltar}>← Voltar aos pacotes</BtnOut>
@@ -469,12 +495,74 @@ function PacotesPadronizados({ produtos, trans, setTrans, ajustes, setAjustes, r
 
 export default function Locacoes({ produtos, setProdutos, trans, setTrans, ajustes, setAjustes }) {
   const [aba, setAba] = useState('hist');
-  const criarAjusteSeNecessario = (produtoId, tamPedido, tamEntregue, transId, entrega) => { if (tamPedido === tamEntregue) return; setAjustes((prev) => [...prev, { id: _ajusteId++, produtoId, transId, desc: `Ajuste de caimento: peça retirada no tamanho ${tamEntregue} para atender pedido do tamanho ${tamPedido}.`, tamOriginal: tamPedido, tamEntregue, entrega: entrega || '', status: 'Pendente' }]); };
-  const registrarVenda = (f) => { const id = _transId++; setTrans((prev) => [...prev, { id, tipo: 'venda', produtoId: f.produtoId, tamPedido: f.tam, tamEntregue: f.tam, cliente: f.cliente, tel: f.tel, documento: f.documento, retirada: null, devolucao: null, valor: f.valor, data: new Date().toISOString().slice(0, 10), devolvido: null, avarias: '', contrato: 'Confirmado', noivos: '', dataEvento: '', integrantes: [] }]); setProdutos((prev) => prev.map((p) => p.id !== f.produtoId ? p : { ...p, variantes: p.variantes.map((v) => v.tam === f.tam ? { ...v, qtd: Math.max(0, v.qtd - 1) } : v) })); setAba('hist'); };
-  const registrarLocacao = (f) => { const id = _transId++; setTrans((prev) => [...prev, { id, tipo: 'locacao_avulsa', produtoId: f.produtoId, tamPedido: f.tamPedido, tamEntregue: f.tamEntregue, cliente: f.cliente, tel: f.tel, documento: f.documento, retirada: f.retirada, devolucao: f.devolucao, valor: f.valor, data: new Date().toISOString().slice(0, 10), devolvido: false, avarias: '', contrato: 'Rascunho', noivos: '', dataEvento: '', integrantes: [] }]); if (f.precisaAjuste) criarAjusteSeNecessario(f.produtoId, f.tamPedido, f.tamEntregue, id, f.retirada); setAba('hist'); };
-  const registrarPadronizada = (f) => { const id = _transId++; setTrans((prev) => [...prev, { id, tipo: 'locacao_padronizada', produtoId: null, tamPedido: '', tamEntregue: '', cliente: f.cliente, tel: f.tel, documento: '', retirada: f.retirada, devolucao: f.devolucao, valor: f.valor, data: new Date().toISOString().slice(0, 10), devolvido: false, avarias: '', contrato: 'Rascunho', noivos: f.noivos, dataEvento: f.dataEvento, dataFechamento: f.dataFechamento, limiteComparecimento: f.limiteComparecimento, trajeConfidencial: false, senhaRevelacao: '', integrantes: f.integrantes }]); f.integrantes.forEach((i) => { if (i.precisaAjuste) criarAjusteSeNecessario(i.produtoId, i.tam, i.tamEntregue, id, f.retirada); }); };
-  const onAvancarContrato = (transId) => { setTrans((prev) => prev.map((t) => { if (t.id !== transId) return t; if (t.contrato === 'Rascunho') return { ...t, contrato: 'Aguardando assinatura loja' }; if (t.contrato === 'Aguardando assinatura loja') return { ...t, contrato: 'Aguardando assinatura cliente' }; if (t.contrato === 'Aguardando assinatura cliente') return { ...t, contrato: 'Confirmado' }; return t; })); };
-  const abas = [{ key: 'hist', label: 'Histórico' }, { key: 'venda', label: 'Venda Avulsa' }, { key: 'avulsa', label: 'Locação Avulsa' }, { key: 'pacotes', label: 'Pacotes Padronizados' }];
+
+  const criarAjusteSeNecessario = (produtoId, tamPedido, tamEntregue, transId, entrega) => {
+    if (tamPedido === tamEntregue) return;
+    setAjustes((prev) => [...prev, { id: _ajusteId++, produtoId, transId, desc: `Ajuste de caimento: peça retirada no tamanho ${tamEntregue} para atender pedido do tamanho ${tamPedido}.`, tamOriginal: tamPedido, tamEntregue, entrega: entrega || '', status: 'Pendente' }]);
+  };
+
+  const registrarVenda = async (f) => {
+    try {
+      const criada = await api.transacoes.create({
+        tipo: 'venda', produtoId: f.produtoId, tamPedido: f.tam, tamEntregue: f.tam,
+        cliente: f.cliente, tel: f.tel, documento: f.documento,
+        retirada: null, devolucao: null, valor: f.valor,
+        devolvido: null, contrato: 'Confirmado',
+      });
+      setTrans((prev) => [criada, ...prev]);
+      setProdutos((prev) => prev.map((p) => p.id !== f.produtoId ? p : { ...p, variantes: p.variantes.map((v) => v.tam === f.tam ? { ...v, qtd: Math.max(0, v.qtd - 1) } : v) }));
+      setAba('hist');
+    } catch (err) { alert(err.message || 'Erro ao registrar venda'); }
+  };
+
+  const registrarLocacao = async (f) => {
+    try {
+      const criada = await api.transacoes.create({
+        tipo: 'locacao_avulsa', produtoId: f.produtoId, tamPedido: f.tamPedido, tamEntregue: f.tamEntregue,
+        cliente: f.cliente, tel: f.tel, documento: f.documento,
+        retirada: f.retirada, devolucao: f.devolucao, valor: f.valor,
+        devolvido: false, contrato: 'Rascunho',
+      });
+      setTrans((prev) => [criada, ...prev]);
+      if (f.precisaAjuste) criarAjusteSeNecessario(f.produtoId, f.tamPedido, f.tamEntregue, criada.id, f.retirada);
+      setAba('hist');
+    } catch (err) { alert(err.message || 'Erro ao registrar locação'); }
+  };
+
+  const registrarPadronizada = async (f) => { console.log('[REG] chamado', f);
+    try {
+      const criada = await api.transacoes.create({
+        tipo: 'locacao_padronizada',
+        cliente: f.cliente, tel: f.tel,
+        retirada: f.retirada, devolucao: f.devolucao, valor: f.valor,
+        devolvido: false, contrato: 'Rascunho',
+        noivos: f.noivos, dataEvento: f.dataEvento,
+        dataFechamento: f.dataFechamento, limiteComparecimento: f.limiteComparecimento,
+        trajeConfidencial: false, senhaRevelacao: '',
+        integrantes: f.integrantes,
+      });
+      setTrans((prev) => [criada, ...prev]);
+      f.integrantes.forEach((i) => { if (i.precisaAjuste) criarAjusteSeNecessario(i.produtoId, i.tam, i.tamEntregue, criada.id, f.retirada); });
+    } catch (err) { alert(err.message || 'Erro ao registrar pacote'); }
+  };
+
+  const onAvancarContrato = async (transId) => {
+    const t = trans.find((x) => x.id === transId);
+    if (!t) return;
+    const proximo = t.contrato === 'Rascunho' ? 'Aguardando assinatura loja' : t.contrato === 'Aguardando assinatura loja' ? 'Aguardando assinatura cliente' : 'Confirmado';
+    try {
+      const atualizada = await api.transacoes.update(transId, { ...t, contrato: proximo });
+      setTrans((prev) => prev.map((x) => x.id === transId ? atualizada : x));
+    } catch (err) { alert(err.message || 'Erro ao avançar contrato'); }
+  };
+
+  const abas = [
+    { key: 'hist', label: 'Histórico' },
+    { key: 'venda', label: 'Venda Avulsa' },
+    { key: 'avulsa', label: 'Locação Avulsa' },
+    { key: 'pacotes', label: 'Pacotes Padronizados' },
+  ];
+
   return (
     <div>
       <div style={{ display: 'flex', gap: 7, marginBottom: 16, flexWrap: 'wrap' }}>
