@@ -92,6 +92,12 @@ export const api = {
     create: (p) => req('/api/produtos', { method: 'POST', body: p }),
     update: (id, p) => req(`/api/produtos/${id}`, { method: 'PUT', body: p }),
     remove: (id) => req(`/api/produtos/${id}`, { method: 'DELETE' }),
+  transacoes: {
+    list:   () => req('/api/transacoes'),
+    create: (t) => req('/api/transacoes', { method: 'POST', body: t }),
+    update: (id, t) => req(`/api/transacoes/${id}`, { method: 'PUT', body: t }),
+    remove: (id) => req(`/api/transacoes/${id}`, { method: 'DELETE' }),
+  },
   },
 };
 
